@@ -355,35 +355,55 @@
                 fetchJsonForVideo(video.jsonId, index);
             });
 
-            function fetchJsonForVideo(jsonId, index) {
+            async function fetchJsonForVideo(jsonId, index) {
                 const targetUrl = `https://drive.google.com/uc?export=download&id=${jsonId}`;
                 const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                const dataContainer = document.getElementById(`data-container-${index}`);
                 
-                fetch(proxyUrl)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`網路回應錯誤: ${response.statusText}`);
-                        return response.json();
-                    })
-                    .then(data => {
-                        const dataContainer = document.getElementById(`data-container-${index}`);
+                const maxRetries = 3;
+                let lastError = null;
+
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const response = await fetch(proxyUrl);
+                        if (!response.ok) {
+                            throw new Error(`網路回應錯誤: ${response.statusText}`);
+                        }
+                        const data = await response.json();
+
+                        // 成功獲取資料
                         dataContainer.classList.remove('loading');
-                        
-                        // 產生兩種視圖內容
                         const formattedHtml = createMotionAnalysisHtml(data.motionAnalysis);
-                        const rawJsonString = JSON.stringify(data, null, 2); // 格式化 JSON 字串
-
-                        // 預設顯示格式化視圖
+                        const rawJsonString = JSON.stringify(data, null, 2);
                         dataContainer.innerHTML = formattedHtml;
-
-                        // 設定切換功能
                         setupViewToggle(index, formattedHtml, rawJsonString);
-                    })
-                    .catch(error => {
-                        console.error(`載入影片 #${index} 的資料失敗:`, error);
-                        const dataContainer = document.getElementById(`data-container-${index}`);
-                        dataContainer.classList.remove('loading');
-                        dataContainer.innerHTML = `<p class="error-message">資料載入失敗！請檢查檔案 ID 與共用權限。</p>`;
-                    });
+                        return; // 成功後直接離開函式
+
+                    } catch (error) {
+                        lastError = error;
+                        console.error(`載入影片 #${index} 的資料失敗 (嘗試次數 ${attempt}/${maxRetries}):`, error);
+                        
+                        // 更新 UI 顯示重試訊息
+                        if (dataContainer) {
+                           dataContainer.innerHTML = `<p>資料載入失敗，正在嘗試重新連線... (${attempt}/${maxRetries})</p>`;
+                        }
+                        
+                        // 如果不是最後一次嘗試，則等待 2 秒後再重試
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                    }
+                }
+
+                // 如果所有重試都失敗了
+                console.error(`載入影片 #${index} 的資料最終失敗:`, lastError);
+                if (dataContainer) {
+                    dataContainer.classList.remove('loading');
+                    dataContainer.innerHTML = `
+                        <p class="error-message">資料載入失敗！</p>
+                        <p>已嘗試多次重新連線，請檢查檔案 ID 與共用權限，或稍後再試。</p>
+                    `;
+                }
             }
 
             // --- 設定視圖切換功能的函式 ---
