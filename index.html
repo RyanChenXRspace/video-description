@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動作描述</title>
+    <!-- 引入 Google Fonts 以美化字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 基本樣式設定 --- */
+        :root {
+            --primary-color: #005a8d;
+            --secondary-color: #007bff;
+            --light-bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --info-bg: #eaf6ff;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --code-bg: #2d2d2d;
+            --code-color: #f8f8f2;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- 主要內容容器 --- */
+        .main-container {
+            background-color: var(--card-bg);
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            border-bottom: 2px solid var(--primary-color);
+            display: inline-block;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* --- 單一影片項目容器 --- */
+        .video-item {
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .video-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        /* --- 內容佈局容器 (Flexbox) --- */
+        .content-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+        }
+
+        /* --- 左側影片區塊 --- */
+        .video-wrapper {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background-color: #000;
+            aspect-ratio: 9 / 16;
+        }
+
+        /* --- 右側資訊區塊 --- */
+        .info-wrapper {
+            flex: 2;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* --- 資料顯示區塊 --- */
+        .data-container {
+            background-color: var(--card-bg);
+            text-align: left;
+            flex-grow: 1;
+            box-sizing: border-box;
+            /* --- 新增：最大高度與捲軸 --- */
+            max-height: 650px; /* 設定一個最大高度，可根據需求調整 */
+            overflow-y: auto; /* 當內容超出最大高度時，顯示垂直捲軸 */
+            padding-right: 10px; /* 增加一點內距，避免捲軸太貼近內容 */
+        }
+        
+        /* --- 新增：美化捲軸樣式 (適用於 Webkit 核心的瀏覽器如 Chrome, Safari) --- */
+        .data-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .data-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .data-container::-webkit-scrollbar-thumb {
+            background: #aaa;
+            border-radius: 10px;
+        }
+
+        .data-container::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+
+        .data-container.loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            background-color: var(--info-bg);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .error-message {
+            color: #d9534f;
+            font-weight: bold;
+        }
+
+        /* --- 視圖切換按鈕樣式 --- */
+        .view-toggle {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+        .toggle-btn {
+            padding: 8px 15px;
+            border: 1px solid var(--primary-color);
+            background-color: transparent;
+            color: var(--primary-color);
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 5px;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .toggle-btn:not(.active):hover {
+            background-color: var(--info-bg);
+        }
+        
+        /* --- 原始 JSON 顯示樣式 --- */
+        .data-container pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-size: 0.9em;
+            background-color: var(--code-bg);
+            color: var(--code-color);
+            padding: 15px;
+            border-radius: 8px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        /* --- 資訊卡片樣式 --- */
+        .overview-section {
+            background-color: var(--info-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .overview-section h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .info-card {
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .info-card .label {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .info-card .value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .tags-container {
+            margin-top: 15px;
+        }
+        .tag {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* --- 時間軸樣式 --- */
+        .timeline-section h3 {
+             color: var(--primary-color);
+        }
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            border-left: 3px solid #dcdcdc;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -37px;
+            top: 0;
+            width: 15px;
+            height: 15px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            border: 3px solid var(--card-bg);
+        }
+        .timeline-timestamp {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+        .timeline-summary {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .part-action-list {
+            padding-left: 20px;
+            list-style-type: none;
+        }
+        .part-action-item {
+            margin-bottom: 8px;
+        }
+        .part-action-item .part {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* --- RWD 響應式設計 --- */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .main-container {
+                padding: 15px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1>Video Description</h1>
+        <div id="video-gallery"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const videoData = [
+                {
+                    title: "1",
+                    videoId: "13N1gCF2YfCDMEl8wSh2pu8kpPFarLozD",
+                    jsonId: "1cTlfL6oGyWLUnxXz6ywUsm6XUnrzgDnq"
+                },
+                {
+                    title: "2",
+                    videoId: "12pWC7_7WaOYMAE0TBVPfPDzrolcSUyCN",
+                    jsonId: "19dIn0lNFqHG2nh5aDISwDm8GK_2Fcsfj"
+                },
+                {
+                    title: "3",
+                    videoId: "1TJ0fH5jO9gqVV9d4tdX23a9ONe8gxHGZ",
+                    jsonId: "1ReXHuNq3V3MoTovp4sx847RLWwMihrS6"
+                },
+                {
+                    title: "4",
+                    videoId: "1i_lk83M7dOIsP2ZbMIhXiNhNQM7hp63M",
+                    jsonId: "1T82717UvYrcxggiUronZJ49WZJLxSiwz"
+                },
+                {
+                    title: "5",
+                    videoId: "1Nl-Mm4C1FMss-2_zZ0XOc2bLDjSc2c60",
+                    jsonId: "1bMp_vK6SmoUX397AvBnttiQv29MfAUG6"
+                },
+            ];
+
+            const galleryContainer = document.getElementById('video-gallery');
+
+            videoData.forEach((video, index) => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.id = `video-item-${index}`;
+
+                videoItem.innerHTML = `
+                    <h2>${video.title}</h2>
+                    <div class="content-wrapper">
+                        <div class="video-wrapper">
+                            <iframe src="https://drive.google.com/file/d/${video.videoId}/preview" allowfullscreen></iframe>
+                        </div>
+                        <div class="info-wrapper">
+                            <div class="view-toggle">
+                                <button class="toggle-btn active" data-view="formatted">格式化視圖</button>
+                                <button class="toggle-btn" data-view="raw">原始 JSON</button>
+                            </div>
+                            <div id="data-container-${index}" class="data-container loading">
+                                <p>正在載入資料...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                galleryContainer.appendChild(videoItem);
+                fetchJsonForVideo(video.jsonId, index);
+            });
+
+            function fetchJsonForVideo(jsonId, index) {
+                const targetUrl = `https://drive.google.com/uc?export=download&id=${jsonId}`;
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                
+                fetch(proxyUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`網路回應錯誤: ${response.statusText}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        const dataContainer = document.getElementById(`data-container-${index}`);
+                        dataContainer.classList.remove('loading');
+                        
+                        // 產生兩種視圖內容
+                        const formattedHtml = createMotionAnalysisHtml(data.motionAnalysis);
+                        const rawJsonString = JSON.stringify(data, null, 2); // 格式化 JSON 字串
+
+                        // 預設顯示格式化視圖
+                        dataContainer.innerHTML = formattedHtml;
+
+                        // 設定切換功能
+                        setupViewToggle(index, formattedHtml, rawJsonString);
+                    })
+                    .catch(error => {
+                        console.error(`載入影片 #${index} 的資料失敗:`, error);
+                        const dataContainer = document.getElementById(`data-container-${index}`);
+                        dataContainer.classList.remove('loading');
+                        dataContainer.innerHTML = `<p class="error-message">資料載入失敗！請檢查檔案 ID 與共用權限。</p>`;
+                    });
+            }
+
+            // --- 設定視圖切換功能的函式 ---
+            function setupViewToggle(index, formattedHtml, rawJsonString) {
+                const videoItem = document.getElementById(`video-item-${index}`);
+                const toggleButtons = videoItem.querySelectorAll('.toggle-btn');
+                const dataContainer = videoItem.querySelector(`#data-container-${index}`);
+
+                toggleButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        if (button.classList.contains('active')) {
+                            return;
+                        }
+
+                        toggleButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+
+                        const view = button.dataset.view;
+                        if (view === 'raw') {
+                            const escapedJson = escapeHtml(rawJsonString);
+                            dataContainer.innerHTML = `<pre><code>${escapedJson}</code></pre>`;
+                        } else {
+                            dataContainer.innerHTML = formattedHtml;
+                        }
+                    });
+                });
+            }
+
+            // --- HTML 字元轉義函式 (防止 XSS) ---
+            function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            // --- 主渲染函式 ---
+            function createMotionAnalysisHtml(analysis) {
+                if (!analysis) return '<p class="error-message">找不到 motionAnalysis 資料。</p>';
+                
+                const overviewHtml = createOverviewHtml(analysis.motionOverview);
+                const breakdownHtml = createActionBreakdownHtml(analysis.actionBreakdown);
+
+                return `${overviewHtml}${breakdownHtml}`;
+            }
+
+            // --- 渲染「動作總覽」的函式 ---
+            function createOverviewHtml(overview) {
+                if (!overview) return '';
+
+                const tagsHtml = (overview.tags || [])
+                    .map(tag => `<span class="tag">${tag}</span>`)
+                    .join('');
+
+                return `
+                    <div class="overview-section">
+                        <h3>動作總覽</h3>
+                        <p>${overview.overview || '無'}</p>
+                        <div class="overview-grid">
+                            <div class="info-card"><div class="label">性別</div><div class="value">${overview.gender || 'N/A'}</div></div>
+                            <div class="info-card"><div class="label">動作類別</div><div class="value">${overview.actionCategory || 'N/A'}</div></div>
+                            <div class="info-card"><div class="label">持續時間</div><div class="value">${overview.duration || 'N/A'}</div></div>
+                        </div>
+                        <div class="tags-container">${tagsHtml}</div>
+                    </div>
+                `;
+            }
+
+            // --- 渲染「動作分解時間軸」的函式 ---
+            function createActionBreakdownHtml(breakdown) {
+                if (!breakdown || breakdown.length === 0) return '';
+
+                const timelineItemsHtml = breakdown.map(item => {
+                    const partActionsHtml = (item.partActions || [])
+                        .map(part => `<li class="part-action-item"><span class="part">${part.part}:</span> ${part.description}</li>`)
+                        .join('');
+
+                    return `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-timestamp">${item.keyframeId} (${item.timestamp}s)</div>
+                            <div class="timeline-summary">${item.actionSummary}</div>
+                            <ul class="part-action-list">${partActionsHtml}</ul>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="timeline-section">
+                        <h3>動作分解時間軸</h3>
+                        <div class="timeline">${timelineItemsHtml}</div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+
+</body>
+</html>
