@@ -107,13 +107,13 @@
             text-align: left;
             flex-grow: 1;
             box-sizing: border-box;
-            /* --- 新增：最大高度與捲軸 --- */
-            max-height: 650px; /* 設定一個最大高度，可根據需求調整 */
-            overflow-y: auto; /* 當內容超出最大高度時，顯示垂直捲軸 */
-            padding-right: 10px; /* 增加一點內距，避免捲軸太貼近內容 */
+            max-height: 650px;
+            overflow-y: auto;
+            padding-right: 10px;
+            border-radius: 8px; /* 新增圓角 */
+            transition: background-color 0.3s ease; /* 新增過渡效果 */
         }
         
-        /* --- 新增：美化捲軸樣式 (適用於 Webkit 核心的瀏覽器如 Chrome, Safari) --- */
         .data-container::-webkit-scrollbar {
             width: 8px;
         }
@@ -138,7 +138,6 @@
             align-items: center;
             color: #666;
             background-color: var(--info-bg);
-            border-radius: 8px;
             padding: 20px;
         }
         
@@ -171,15 +170,18 @@
         }
         
         /* --- 原始 JSON 顯示樣式 --- */
+        /* 新增：當 data-container 處於 raw-view 模式時的樣式 */
+        .data-container.raw-view-active {
+            background-color: var(--code-bg);
+            padding: 15px;
+        }
+
         .data-container pre {
             white-space: pre-wrap;
             word-wrap: break-word;
             margin: 0;
             font-size: 0.9em;
-            background-color: var(--code-bg);
             color: var(--code-color);
-            padding: 15px;
-            border-radius: 8px;
             height: 100%;
             box-sizing: border-box;
         }
@@ -371,31 +373,27 @@
                         }
                         const data = await response.json();
 
-                        // 成功獲取資料
                         dataContainer.classList.remove('loading');
                         const formattedHtml = createMotionAnalysisHtml(data.motionAnalysis);
                         const rawJsonString = JSON.stringify(data, null, 2);
                         dataContainer.innerHTML = formattedHtml;
                         setupViewToggle(index, formattedHtml, rawJsonString);
-                        return; // 成功後直接離開函式
+                        return;
 
                     } catch (error) {
                         lastError = error;
                         console.error(`載入影片 #${index} 的資料失敗 (嘗試次數 ${attempt}/${maxRetries}):`, error);
                         
-                        // 更新 UI 顯示重試訊息
                         if (dataContainer) {
                            dataContainer.innerHTML = `<p>資料載入失敗，正在嘗試重新連線... (${attempt}/${maxRetries})</p>`;
                         }
                         
-                        // 如果不是最後一次嘗試，則等待 2 秒後再重試
                         if (attempt < maxRetries) {
                             await new Promise(resolve => setTimeout(resolve, 2000));
                         }
                     }
                 }
 
-                // 如果所有重試都失敗了
                 console.error(`載入影片 #${index} 的資料最終失敗:`, lastError);
                 if (dataContainer) {
                     dataContainer.classList.remove('loading');
@@ -406,7 +404,7 @@
                 }
             }
 
-            // --- 設定視圖切換功能的函式 ---
+            // --- 修改：設定視圖切換功能的函式 ---
             function setupViewToggle(index, formattedHtml, rawJsonString) {
                 const videoItem = document.getElementById(`video-item-${index}`);
                 const toggleButtons = videoItem.querySelectorAll('.toggle-btn');
@@ -423,9 +421,13 @@
 
                         const view = button.dataset.view;
                         if (view === 'raw') {
+                            // 新增：為容器加上特定 class
+                            dataContainer.classList.add('raw-view-active');
                             const escapedJson = escapeHtml(rawJsonString);
                             dataContainer.innerHTML = `<pre><code>${escapedJson}</code></pre>`;
                         } else {
+                            // 新增：從容器移除特定 class
+                            dataContainer.classList.remove('raw-view-active');
                             dataContainer.innerHTML = formattedHtml;
                         }
                     });
