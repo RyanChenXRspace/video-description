@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>動作描述</title>
-    <!-- 引入 Google Fonts 以美化字體 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
@@ -170,7 +169,6 @@
         }
         
         /* --- 原始 JSON 顯示樣式 --- */
-        /* 新增：當 data-container 處於 raw-view 模式時的樣式 */
         .data-container.raw-view-active {
             background-color: var(--code-bg);
             padding: 15px;
@@ -337,7 +335,7 @@
                 videoItem.id = `video-item-${index}`;
 
                 videoItem.innerHTML = `
-                    <h2>${video.title}</h2>
+                    <h2>${escapeHtml(video.title)}</h2>
                     <div class="content-wrapper">
                         <div class="video-wrapper">
                             <iframe src="https://drive.google.com/file/d/${video.videoId}/preview" allowfullscreen></iframe>
@@ -404,7 +402,6 @@
                 }
             }
 
-            // --- 修改：設定視圖切換功能的函式 ---
             function setupViewToggle(index, formattedHtml, rawJsonString) {
                 const videoItem = document.getElementById(`video-item-${index}`);
                 const toggleButtons = videoItem.querySelectorAll('.toggle-btn');
@@ -421,12 +418,10 @@
 
                         const view = button.dataset.view;
                         if (view === 'raw') {
-                            // 新增：為容器加上特定 class
                             dataContainer.classList.add('raw-view-active');
                             const escapedJson = escapeHtml(rawJsonString);
                             dataContainer.innerHTML = `<pre><code>${escapedJson}</code></pre>`;
                         } else {
-                            // 新增：從容器移除特定 class
                             dataContainer.classList.remove('raw-view-active');
                             dataContainer.innerHTML = formattedHtml;
                         }
@@ -434,8 +429,11 @@
                 });
             }
 
-            // --- HTML 字元轉義函式 (防止 XSS) ---
             function escapeHtml(unsafe) {
+                if (typeof unsafe !== 'string') {
+                    // 如果輸入不是字串，先轉換它，以避免 .replace 報錯
+                    unsafe = String(unsafe);
+                }
                 return unsafe
                      .replace(/&/g, "&amp;")
                      .replace(/</g, "&lt;")
@@ -444,7 +442,6 @@
                      .replace(/'/g, "&#039;");
             }
 
-            // --- 主渲染函式 ---
             function createMotionAnalysisHtml(analysis) {
                 if (!analysis) return '<p class="error-message">找不到 motionAnalysis 資料。</p>';
                 
@@ -454,42 +451,43 @@
                 return `${overviewHtml}${breakdownHtml}`;
             }
 
-            // --- 渲染「動作總覽」的函式 ---
+            // --- 修改：渲染「動作總覽」的函式 ---
             function createOverviewHtml(overview) {
                 if (!overview) return '';
 
                 const tagsHtml = (overview.tags || [])
-                    .map(tag => `<span class="tag">${tag}</span>`)
+                    .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
                     .join('');
 
                 return `
                     <div class="overview-section">
                         <h3>動作總覽</h3>
-                        <p>${overview.overview || '無'}</p>
+                        <p>${escapeHtml(overview.overview || '無')}</p>
                         <div class="overview-grid">
-                            <div class="info-card"><div class="label">性別</div><div class="value">${overview.gender || 'N/A'}</div></div>
-                            <div class="info-card"><div class="label">動作類別</div><div class="value">${overview.actionCategory || 'N/A'}</div></div>
-                            <div class="info-card"><div class="label">持續時間</div><div class="value">${overview.duration || 'N/A'}</div></div>
+                            <div class="info-card"><div class="label">性別</div><div class="value">${escapeHtml(overview.gender || 'N/A')}</div></div>
+                            <div class="info-card"><div class="label">動作類別</div><div class="value">${escapeHtml(overview.actionCategory || 'N/A')}</div></div>
+                            <div class="info-card"><div class="label">情緒</div><div class="value">${escapeHtml(overview.emotion || 'N/A')}</div></div>
+                            <div class="info-card"><div class="label">持續時間</div><div class="value">${escapeHtml(overview.duration || 'N/A')}</div></div>
                         </div>
                         <div class="tags-container">${tagsHtml}</div>
                     </div>
                 `;
             }
 
-            // --- 渲染「動作分解時間軸」的函式 ---
+            // --- 修改：渲染「動作分解時間軸」的函式 ---
             function createActionBreakdownHtml(breakdown) {
                 if (!breakdown || breakdown.length === 0) return '';
 
                 const timelineItemsHtml = breakdown.map(item => {
                     const partActionsHtml = (item.partActions || [])
-                        .map(part => `<li class="part-action-item"><span class="part">${part.part}:</span> ${part.description}</li>`)
+                        .map(part => `<li class="part-action-item"><span class="part">${escapeHtml(part.part)}:</span> ${escapeHtml(part.description)}</li>`)
                         .join('');
 
                     return `
                         <div class="timeline-item">
                             <div class="timeline-dot"></div>
-                            <div class="timeline-timestamp">${item.keyframeId} (${item.timestamp}s)</div>
-                            <div class="timeline-summary">${item.actionSummary}</div>
+                            <div class="timeline-timestamp">${escapeHtml(item.keyframeId)} (${escapeHtml(item.timestamp)}s)</div>
+                            <div class="timeline-summary">${escapeHtml(item.actionSummary)}</div>
                             <ul class="part-action-list">${partActionsHtml}</ul>
                         </div>
                     `;
